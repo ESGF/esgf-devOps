@@ -2,6 +2,7 @@ name: esgf-pub
 channels:
   - conda-forge
   - defaults
+  - anaconda
 dependencies:
   - asn1crypto=0.24.0
   - blas=1.1
@@ -54,6 +55,7 @@ dependencies:
   - openssl=1.0.2p
   - ossuuid=1.6.2
   - pip=19.0.1
+  - psutil=5.5.0
   - pycparser=2.19
   - pyopenssl=18.0.0
   - pysocks=1.6.8
