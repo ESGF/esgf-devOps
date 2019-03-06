@@ -71,7 +71,7 @@ dependencies:
   - zlib=1.2.11
   - pip:
     - cdf2cim==0.3.2.0
-    - cf-python==2.3.2
+    - cf-python==2.3.3
     - cftime==1.0.3.4
     - decorator==4.3.2
     - esgcet==3.5.11
