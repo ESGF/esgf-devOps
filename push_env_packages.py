@@ -16,15 +16,6 @@ logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-with open(os.path.join(os.path.dirname(__file__), 'esgf-pub_env.yml'), 'r') as config_file:
-    config = yaml.load(config_file)
-
-# print("config:", config)
-pip_dependencies = config["dependencies"][-1]
-print("pip_dependencies:", pip_dependencies)
-dependencies = config["dependencies"][:-1]
-print("dependencies:", dependencies)
-
 def call_binary(binary_name, arguments=None, silent=False, conda_env=None):
     '''Uses plumbum to make a call to a CLI binary.  The arguments should be passed as a list of strings'''
     RETURN_CODE = 0
@@ -60,30 +51,31 @@ def call_binary(binary_name, arguments=None, silent=False, conda_env=None):
         else:
             output = command.run_tee()
 
-    #special case where checking java version is displayed via stderr
-    if command.__str__() == '/usr/local/java/bin/java' and output[RETURN_CODE] == 0:
-        return output[STDERR]
-
     #Check for non-zero return code
     if output[RETURN_CODE] != 0:
         logger.error("Error occurred when executing %s %s", binary_name, " ".join(arguments))
         logger.error("STDERR: %s", output[STDERR])
         raise ProcessExecutionError
     else:
+        print("output:", output)
+        print("output type:", type(output))
         return output[STDOUT]
 
-def run_cmd(cmd, verbose=False):
-    if verbose:
-        print("Executing :",cmd)
-    p = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE)
-    o,e = p.communicate()
-    return o,e
+
+def check_anaconda_login():
+    login_info = call_binary("anaconda", ["whoami"])
+    print("login_info:", login_info)
+
 
 @click.command()
+## TODO: add --from-channel option
+# TODO: add --to-channel option
 @click.option('--env', default=None, help='Name of the conda environment for which to upload the packages it contains')
 def main(env):
-
-    env_file_name = "{}_env.yml".format(env)
+    if env is None:
+        env_file_name = input("Enter the name of the conda environment file to parse:")
+    else:
+        env_file_name = "{}_env.yml".format(env)
     with open(os.path.join(os.path.dirname(__file__), env_file_name), 'r') as config_file:
         config = yaml.load(config_file)
 
@@ -100,8 +92,11 @@ def main(env):
     # sys.path.append("/anaconda2/bin")
     conda_pkgs = os.path.abspath(os.path.join(os.environ.get("CONDA_EXE"),"..","..","pkgs"))
     print("conda_pkgs:", conda_pkgs)
+
+    check_anaconda_login()
     # Get list of package we are using
-    # pkgs = call_binary("conda", ["list", "-n", env_file_name])
+    call_binary("python", ["--version"])
+    pkgs = call_binary("conda", ["list", "-n", env_file_name])
     # print("test:", test)
     # pkgs, err = run_cmd("conda list", verbose=True)
     failed = []
