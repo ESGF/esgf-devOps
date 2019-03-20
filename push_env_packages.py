@@ -10,61 +10,33 @@ from plumbum import local
 from plumbum import TEE
 from plumbum import BG
 from plumbum.commands import ProcessExecutionError
+import build_utilities
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
 logger = logging.getLogger(__name__)
 
 
-def call_binary(binary_name, arguments=None, silent=False, conda_env=None):
-    '''Uses plumbum to make a call to a CLI binary.  The arguments should be passed as a list of strings'''
-    RETURN_CODE = 0
-    STDOUT = 1
-    STDERR = 2
-    logger.debug("binary_name: %s", binary_name)
-    logger.debug("arguments: %s", arguments)
-    if conda_env is not None:
-        if arguments is not None:
-            arguments = [conda_env, binary_name] + arguments
-        else:
-            arguments = [conda_env, binary_name]
-        binary_name = os.path.join(os.path.dirname(__file__), "run_in_env.sh")
-    try:
-        command = local[binary_name]
-    except ProcessExecutionError:
-        logger.error("Could not find %s executable", binary_name)
-        raise
-
-    for var in os.environ:
-        local.env[var] = os.environ[var]
-
-    if silent:
-        if arguments is not None:
-            cmd_future = command.__getitem__(arguments) & BG
-        else:
-            cmd_future = command.run_bg()
-        cmd_future.wait()
-        output = [cmd_future.returncode, cmd_future.stdout, cmd_future.stderr]
-    else:
-        if arguments is not None:
-            output = command.__getitem__(arguments) & TEE
-        else:
-            output = command.run_tee()
-
-    #Check for non-zero return code
-    if output[RETURN_CODE] != 0:
-        logger.error("Error occurred when executing %s %s", binary_name, " ".join(arguments))
-        logger.error("STDERR: %s", output[STDERR])
-        raise ProcessExecutionError
-    else:
-        print("output:", output)
-        print("output type:", type(output))
-        return output[STDOUT]
-
-
 def check_anaconda_login():
-    login_info = call_binary("anaconda", ["whoami"])
-    print("login_info:", login_info)
+    try:
+        login_info = build_utilities.call_binary("anaconda", ["whoami"], silent=True, stderr_output=True)
+    except ProcessExecutionError:
+        print("You are not logged into the Anaconda CLI.  Please login before running the script")
+        sys.exit(1)
+
+    login_list = login_info.split("\n")
+    if 'Anonymous User' in login_list:
+        print("You are not logged into the Anaconda CLI.  Please login before running the script")
+        sys.exit(1)
+
+    login_dict = {}
+    for val in login_list:
+        pair = val.split(": ")
+        if pair[0]:
+            key = pair[0].strip()
+            login_dict[key.lstrip("+")] = pair[1]
+
+    print("Logged into the Anaconda CLI as {}".format(login_dict["Username"]))
 
 
 @click.command()
@@ -79,7 +51,6 @@ def main(env):
     with open(os.path.join(os.path.dirname(__file__), env_file_name), 'r') as config_file:
         config = yaml.load(config_file)
 
-    # print("config:", config)
     pip_dependencies = config["dependencies"][-1]
     print("pip_dependencies:", pip_dependencies)
     dependencies = config["dependencies"][:-1]
@@ -89,39 +60,30 @@ def main(env):
     else:
         conda_os = "linux-64"
 
-    # sys.path.append("/anaconda2/bin")
     conda_pkgs = os.path.abspath(os.path.join(os.environ.get("CONDA_EXE"),"..","..","pkgs"))
     print("conda_pkgs:", conda_pkgs)
 
     check_anaconda_login()
-    # Get list of package we are using
-    call_binary("python", ["--version"])
-    pkgs = call_binary("conda", ["list", "-n", env_file_name])
-    # print("test:", test)
-    # pkgs, err = run_cmd("conda list", verbose=True)
     failed = []
     success = []
-    # print("pkgs:", pkgs)
-    # for l in pkgs.decode("utf8").split("\n")[2:-1]:
     print("Uploading packages for environment: {}".format(env_file_name))
     for dependency in dependencies:
-        # print("l:", l)
-        # sp = l.split()
-        # name = sp[0]
-        # # print("name:", name)
-        # version = sp[1]
-        # build = sp[2]
-        name, version = dependency.split("=")
+        try:
+            name, version = dependency.split("=")
+        except ValueError:
+            name = dependency
+            version = None
         print("name:", name)
         print("version:", version)
-        # sys.exit(1)
         if name == "#":
             continue
-        # tarname = "{}-{}-{}.tar.bz2".format(name,version,build)
-        resource_location = "conda-forge/{}/{}".format(name, version)
+        if version is None:
+            resource_location = "conda-forge/{}".format(name)
+        else:
+            resource_location = "conda-forge/{}/{}".format(name, version)
         print("Copying {} version {}".format(name, version))
         try:
-            output = call_binary("anaconda", ["copy", resource_location, "--to-owner", "esgf"])
+            output = build_utilities.call_binary("anaconda", ["copy", resource_location, "--to-owner", "esgf"])
             success.append((name, version))
         except ProcessExecutionError:
             failed.append((name, version))
@@ -135,17 +97,6 @@ def main(env):
     print("The following packages failed to be copied.")
     for package in failed:
         print(package)
-        # print("tarname:", tarname)
-        # tarball = os.path.join(conda_pkgs,tarname)
-        # print("looking at:",tarball,os.path.exists(tarball))
-    #     if os.path.exists(tarball):
-    #         o,e = run_cmd("anaconda upload {} -u esgf".format(tarball))
-    #         print("OUT:",o.decode("utf8"))
-    #         print("Err:",e.decode("utf8"))
-    #     else:
-    #         missing.append(tarball)
-    # print(sys.prefix)
-    # print(conda_pkgs)
-    # print("Error on:",missing)
+
 if __name__ == '__main__':
     main()
