@@ -23,13 +23,13 @@ The ESGF DevOps scripts provides convenient interfaces for ESGF release and reso
 
 2. Create the `dev_ops` virtual environment by running `conda env create -f dev_ops_env.yml`
 
-## Push Packages to a Conda Channel
+## Package Uploader
 
 ### Usage
-The `push_env_packages.py` script can parse an exported Conda environment file and upload the packages to a Conda channel.  The script will copy the packages listed in the environment file from the Conda-Forge channel to a channel specified by the user.
+The `upload_packages.py` script can parse an exported Conda environment file and upload the packages to a Conda channel.  The script will copy the packages listed in the environment file from the [conda-forge](https://anaconda.org/conda-forge/repo) channel to a channel specified by the user.
 
 1. Login to the Anaconda CLI
-2. Invoke the script using the available command line options.  Example: `python push_env_packages.py --env cog_env.yml --origin conda-forge --destination esgf`
+2. Invoke the script using the available command line options.  Example: `python upload_packages.py --env cog_env.yml --origin conda-forge --destination esgf`
 
 ### CLI Options
 A CLI is available for providing options to the script.  The available CLI options are as follows:
