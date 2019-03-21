@@ -6,8 +6,8 @@ dependencies:
   - certifi=2018.11.29
   - libedit=3.1.20181209
   - libffi=3.2.1
-  - libgcc-ng
-  - libstdcxx-ng
+  - libgcc-ng=7.2.0
+  - libstdcxx-ng=7.3.0
   - ncurses=6.1
   - openssl=1.1.1a
   - pip=18.1
@@ -50,4 +50,3 @@ dependencies:
     - sqlalchemy==1.2.17
     - urllib3==1.24.1
 prefix: /usr/local/conda/envs/cog
-
