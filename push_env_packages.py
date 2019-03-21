@@ -40,32 +40,27 @@ def check_anaconda_login():
 
 
 @click.command()
-## TODO: add --from-channel option
-# TODO: add --to-channel option
+@click.option('--origin', default="conda-forge", help='Name of the conda channel to copy packages from')
+@click.option('--destination', default="esgf", help='Name of the conda channel to copy packages to')
 @click.option('--env', default=None, help='Name of the conda environment for which to upload the packages it contains')
-def main(env):
+def main(env, origin, destination):
     if env is None:
         env_file_name = input("Enter the name of the conda environment file to parse:")
     else:
-        env_file_name = "{}_env.yml".format(env)
+        env_file_name = env
+
     with open(os.path.join(os.path.dirname(__file__), env_file_name), 'r') as config_file:
         config = yaml.load(config_file)
 
-    pip_dependencies = config["dependencies"][-1]
-    print("pip_dependencies:", pip_dependencies)
     dependencies = config["dependencies"][:-1]
-    print("dependencies:", dependencies)
-    if sys.platform == "darwin":
-        conda_os = "osx-64"
-    else:
-        conda_os = "linux-64"
-
-    conda_pkgs = os.path.abspath(os.path.join(os.environ.get("CONDA_EXE"),"..","..","pkgs"))
-    print("conda_pkgs:", conda_pkgs)
+    print("conda dependencies:")
+    print("\n".join(dependencies))
 
     check_anaconda_login()
+
     failed = []
     success = []
+
     print("Uploading packages for environment: {}".format(env_file_name))
     for dependency in dependencies:
         try:
@@ -78,17 +73,15 @@ def main(env):
         if name == "#":
             continue
         if version is None:
-            resource_location = "conda-forge/{}".format(name)
+            resource_location = "{}/{}".format(origin, name)
         else:
-            resource_location = "conda-forge/{}/{}".format(name, version)
+            resource_location = "{}/{}/{}".format(origin, name, version)
         print("Copying {} version {}".format(name, version))
         try:
-            output = build_utilities.call_binary("anaconda", ["copy", resource_location, "--to-owner", "esgf"])
+            output = build_utilities.call_binary("anaconda", ["copy", resource_location, "--to-owner", destination])
             success.append((name, version))
         except ProcessExecutionError:
             failed.append((name, version))
-
-
 
     print("Successfully copied the following packages to the esgf conda channel")
     for package in success:
