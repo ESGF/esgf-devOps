@@ -34,7 +34,7 @@ The ESGF DevOps scripts provides convenient interfaces for ESGF release and reso
 The `upload_packages.py` script can parse an exported Conda environment file and upload the packages to a Conda channel. The script will copy the packages listed in the environment file from the [conda-forge](https://anaconda.org/conda-forge/repo) channel to a channel specified by the user.
 
 1. Login to the Anaconda CLI
-2. Invoke the script using the available command line options. Example: `python upload_packages.py --env cog_env.yml --origin conda-forge --destination esgf`
+2. Invoke the script using the available command line options. Example: `python upload_packages.py --env esgf_conda_env_files/cog_env.yml --origin conda-forge --destination esgf`
 
 ### CLI Options
 
