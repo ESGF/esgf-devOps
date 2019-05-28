@@ -70,13 +70,13 @@ def get_md5sum(file_name):
     return file_name_md5
 
 
-def mkdir_p(path, mode=0o777):
+def mkdir_p(path, mode=0777):
     """Make directory, passes if directory already exists."""
     try:
         os.makedirs(path, mode)
     except OSError as exc:  # Python >2.5
         if exc.errno == errno.EEXIST and os.path.isdir(path):
-            print("{path} already exists".format(path=path))
+            print "{path} already exists".format(path=path)
         else:
             raise
 

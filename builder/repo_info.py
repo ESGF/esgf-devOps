@@ -5,10 +5,8 @@ ALL_REPO_URLS = {"esgf-dashboard": 'https://github.com/ESGF/esgf-dashboard.git',
                  "esgf-getcert": 'https://github.com/ESGF/esgf-getcert.git',
                  "esgf-idp": 'https://github.com/ESGF/esgf-idp.git',
                  "esgf-node-manager": 'https://github.com/ESGF/esgf-node-manager.git',
-                 "esgf-publisher-resources": 'https://github.com/ESGF/esgf-publisher-resources.git',
                  "esgf-security": 'https://github.com/ESGF/esgf-security.git',
                  "esg-orp": 'https://github.com/ESGF/esg-orp.git',
-                 "esg-publisher": 'https://github.com/ESGF/esg-publisher.git',
                  "esg-search": 'https://github.com/ESGF/esg-search.git',
                  "esgf-stats-api": 'https://github.com/ESGF/esgf-stats-api.git'
                  }

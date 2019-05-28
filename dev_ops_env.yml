@@ -4,24 +4,23 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - ca-certificates=2018.11.29
-  - certifi=2018.11.29
-  - click=7.0
-  - llvm-meta=7.0.0
-  - openssl=1.1.1a
-  - libffi=3.2.1
-  - ncurses=6.1
-  - pip=19.0.1
-  - pyyaml=3.13
-  - readline=7.0
-  - semver=2.8.1=py_1
-  - setuptools=40.7.1
-  - sqlite=3.26.0
-  - tk=8.6.9
-  - wheel=0.32.3
+  - backports
+  - click
+  - configparser
+  - flake8
+  - git=2.20.1
+  - gitdb2
+  - gitpython
+  - pip
+  - plumbum
+  - python=2.7.15
+  - semver
+  - sphinx_rtd_theme=0.4.2=py_0
+  - wheel=0.32.3=py27_0
   - yaml=0.1.7
-  - zlib=1.2.11
   - pip:
-    - plumbum==1.6.7
-    - githubrelease
-    - GitPython
+      - githubrelease==1.5.8
+      - pytest==4.4.1
+      - requests==2.21.0
+      - six==1.12.0
+      - urllib3==1.24.1
