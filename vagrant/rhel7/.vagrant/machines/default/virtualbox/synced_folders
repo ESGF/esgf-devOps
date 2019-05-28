@@ -1,1 +1,1 @@
-{"virtualbox":{"/vagrant":{"disabled":false,"guestpath":"/vagrant","hostpath":"/Users/hill119/Development/vagrant_vms/rhel7","__vagrantfile":true}}}
+{"virtualbox":{"/vagrant":{"disabled":false,"guestpath":"/vagrant","hostpath":"/Users/hill119/Development/esgf-devOps/vagrant/rhel7","__vagrantfile":true}}}
