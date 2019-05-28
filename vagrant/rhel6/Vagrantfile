@@ -1,0 +1,131 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+missing_plugins = %w'vagrant-triggers'.reject { |p| Vagrant.has_plugin?(p) }
+unless missing_plugins.empty?
+  system "vagrant plugin install #{missing_plugins.join(' ')}"
+  puts "Installed new Vagrant plugins. Please run command again"
+  exit 1
+end
+
+$user = "hill119" # Maybe insert your own username here
+$password = "V6354cLYJuAtZSYV" # Maybe insert your own password here
+
+$script = %{
+if ! subscription-manager status; then
+  sudo subscription-manager register --username=#{$user.strip} --password=#{$password.strip} --auto-attach
+  sudo yum-config-manager --disable rhel-6-server-rt-beta-rpms
+fi
+}
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+Vagrant.configure("2") do |config|
+  # The most common configuration options are documented and commented below.
+  # For a complete reference, please see the online documentation at
+  # https://docs.vagrantup.com.
+
+  # Every Vagrant development environment requires a box. You can search for
+  # boxes at https://vagrantcloud.com/search.
+  config.vm.box = "samdoran/rhel6"
+  config.vm.box_download_insecure = true
+
+  # Disable automatic box update checking. If you disable this, then
+  # boxes will only be checked for updates when the user runs
+  # `vagrant box outdated`. This is not recommended.
+  # config.vm.box_check_update = false
+
+  # Create a forwarded port mapping which allows access to a specific port
+  # within the machine from a port on the host machine. In the example below,
+  # accessing "localhost:8080" will access port 80 on the guest machine.
+  # NOTE: This will enable public access to the opened port
+  # config.vm.network "forwarded_port", guest: 80, host: 8080
+
+  # Create a forwarded port mapping which allows access to a specific port
+  # within the machine from a port on the host machine and only allow access
+  # via 127.0.0.1 to disable public access
+  # config.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.1"
+
+  # Create a private network, which allows host-only access to the machine
+  # using a specific IP.
+  # config.vm.network "private_network", ip: "192.168.33.10"
+
+  # Create a public network, which generally matched to bridged network.
+  # Bridged networks make the machine appear as another physical device on
+  # your network.
+  # config.vm.network "public_network"
+
+  # Share an additional folder to the guest VM. The first argument is
+  # the path on the host to the actual folder. The second argument is
+  # the path on the guest to mount the folder. And the optional third
+  # argument is a set of non-required options.
+  # config.vm.synced_folder "../data", "/vagrant_data"
+  config.vm.synced_folder ".", "/vagrant"
+
+  # Provider-specific configuration so you can fine-tune various
+  # backing providers for Vagrant. These expose provider-specific options.
+  # Example for VirtualBox:
+  #
+  # config.vm.provider "virtualbox" do |vb|
+  #   # Display the VirtualBox GUI when booting the machine
+  #   vb.gui = true
+  #
+  #   # Customize the amount of memory on the VM:
+  #   vb.memory = "1024"
+  # end
+  #
+  # View the documentation for the provider you are using for more
+  # information on available options.
+
+  # Enable provisioning with a shell script. Additional provisioners such as
+  # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
+  # documentation for more information about their specific syntax and use.
+  config.vm.provision "shell", inline: $script
+  config.trigger.before :destroy do
+    begin
+      run_remote "sudo subscription-manager unregister"
+    rescue
+      puts "Something went wrong, please remove the machine manually from https://access.redhat.com/management/subscriptions"
+    end
+  end
+  config.vm.provision "shell", inline: <<-SHELL
+    sudo su
+    subscription-manager attach --auto
+    yum update
+    yum install -y curl vim git wget
+    cd /tmp
+
+
+    if [ -d "/usr/local/conda" ]; then
+      echo
+      echo "-----------------------------------"
+      echo "Miniconda already installed."
+      echo "-----------------------------------"
+    else
+      wget --no-check-certificate https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+      CONDA_HOME=/usr/local/conda
+      bash Miniconda3-latest-Linux-x86_64.sh -b -p $CONDA_HOME
+      echo "export PATH=$PATH:/usr/local/conda/bin" >> /etc/environment
+    fi
+
+    source /etc/environment
+
+    if [ ! -d "/tmp/esgf-build" ]; then
+      git clone https://github.com/ESGF/esgf-build.git
+    fi
+
+    cd esgf-build
+    git checkout pytest
+
+    echo "Create esgf-build  env"
+    conda create -y -n esgf-build -c conda-forge 'python<3' pip click flake8 git=2.20.1 gitpython plumbum pytest
+
+    conda init bash
+    source $(conda info --base)/etc/profile.d/conda.sh
+    conda activate esgf-build
+
+    conda env export > /vagrant/esgf_build_rhel6.yml
+  SHELL
+end
